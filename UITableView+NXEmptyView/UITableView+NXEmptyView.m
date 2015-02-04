@@ -98,11 +98,12 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
     
     // setup empty view frame
     CGRect frame = self.bounds;
-    frame.origin = CGPointMake(0, CGRectGetHeight(self.tableHeaderView.frame) - self.contentInset.top);
-    if (self.bounds.size.height < (CGRectGetHeight(self.tableHeaderView.frame) + CGRectGetHeight(emptyView.frame))) {
-        [self setContentInset:UIEdgeInsetsMake(self.contentInset.top, 0, CGRectGetHeight(emptyView.frame)/2, 0)];
+    frame.size.height = CGRectGetHeight(emptyView.frame);
+    frame.origin = CGPointMake(0, CGRectGetHeight(self.tableHeaderView.frame) + self.contentInset.top);
+    if (self.bounds.size.height-frame.origin.y < CGRectGetHeight(emptyView.frame)) {
+        [self setContentInset:UIEdgeInsetsMake(self.contentInset.top, 0, CGRectGetHeight(emptyView.frame) + self.contentInset.top, 0)];
     }
-    frame.size.height -= self.contentInset.top;
+    //frame.size.height -= self.contentInset.top;
     emptyView.frame = frame;
     emptyView.autoresizingMask = (UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth);
     
