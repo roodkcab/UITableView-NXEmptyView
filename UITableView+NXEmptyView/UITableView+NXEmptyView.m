@@ -14,6 +14,7 @@
 static const NSString *NXEmptyViewAssociatedKey = @"NXEmptyViewAssociatedKey";
 static const NSString *NXEmptyViewHideSeparatorLinesAssociatedKey = @"NXEmptyViewHideSeparatorLinesAssociatedKey";
 static const NSString *NXEmptyViewPreviousSeparatorStyleAssociatedKey = @"NXEmptyViewPreviousSeparatorStyleAssociatedKey";
+static const NSString *NXEmptyViewPreviousContentInsetTopAssociatedKey = @"NXEmptyViewPreviousContentInsetTopAssociatedKey";
 
 
 void nxEV_swizzle(Class c, SEL orig, SEL new)
@@ -30,6 +31,7 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
 
 @interface UITableView (NXEmptyViewPrivate)
 @property (nonatomic, assign) UITableViewCellSeparatorStyle nxEV_previousSeparatorStyle;
+@property (nonatomic, assign) CGFloat nxEV_contentInsetTop;
 @end
 
 
@@ -93,17 +95,20 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
     if (!emptyView) return;
     
     if (emptyView.superview != self) {
-        [self insertSubview:emptyView atIndex:0];
+        [self addSubview:emptyView];
     }
     
     // setup empty view frame
     CGRect frame = self.bounds;
-    if (CGRectGetHeight(self.tableHeaderView.frame) > 1) {
-        frame.origin = CGPointMake(0, CGRectGetHeight(self.tableHeaderView.frame));
-        frame.size.height = self.contentSize.height-CGRectGetHeight(self.tableHeaderView.frame)+self.contentInset.bottom;
-    } else {
-        frame.size.height += self.contentInset.bottom;
+    frame.size.height = CGRectGetHeight(emptyView.frame);
+    if (self.nxEV_contentInsetTop < 1) {
+        self.nxEV_contentInsetTop = self.contentInset.top;
     }
+    frame.origin = CGPointMake(0, CGRectGetHeight(self.tableHeaderView.frame) + self.nxEV_contentInsetTop);
+    if (self.bounds.size.height-frame.origin.y < CGRectGetHeight(emptyView.frame)) {
+        [self setContentInset:UIEdgeInsetsMake(self.nxEV_contentInsetTop, 0, CGRectGetHeight(emptyView.frame) + self.nxEV_contentInsetTop, 0)];
+    }
+    //frame.size.height -= self.contentInset.top;
     emptyView.frame = frame;
     emptyView.autoresizingMask = (UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth);
     
@@ -177,6 +182,19 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
 {
     NSNumber *previousSeparatorStyle = [NSNumber numberWithInt:value];
     objc_setAssociatedObject(self, &NXEmptyViewPreviousSeparatorStyleAssociatedKey, previousSeparatorStyle, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+@dynamic nxEV_contentInsetTop;
+- (CGFloat)nxEV_contentInsetTop
+{
+    NSNumber *previousContentInsetTop = objc_getAssociatedObject(self, &NXEmptyViewPreviousContentInsetTopAssociatedKey);
+    return [previousContentInsetTop floatValue];
+}
+
+- (void)setNxEV_contentInsetTop:(CGFloat)value
+{
+    NSNumber *contentInsetTop = [NSNumber numberWithFloat:value];
+    objc_setAssociatedObject(self, &NXEmptyViewPreviousContentInsetTopAssociatedKey, contentInsetTop, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 @end
