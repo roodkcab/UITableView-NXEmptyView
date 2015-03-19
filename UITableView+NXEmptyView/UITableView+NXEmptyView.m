@@ -1,11 +1,3 @@
-//
-//  UITableView+NXEmptyView.m
-//  TableWithEmptyView
-//
-//  Created by Ullrich Schäfer on 21.06.12.
-//
-//
-
 #import <objc/runtime.h>
 
 #import "UITableView+NXEmptyView.h"
@@ -14,7 +6,6 @@
 static const NSString *NXEmptyViewAssociatedKey = @"NXEmptyViewAssociatedKey";
 static const NSString *NXEmptyViewHideSeparatorLinesAssociatedKey = @"NXEmptyViewHideSeparatorLinesAssociatedKey";
 static const NSString *NXEmptyViewPreviousSeparatorStyleAssociatedKey = @"NXEmptyViewPreviousSeparatorStyleAssociatedKey";
-static const NSString *NXEmptyViewPreviousContentInsetTopAssociatedKey = @"NXEmptyViewPreviousContentInsetTopAssociatedKey";
 
 
 void nxEV_swizzle(Class c, SEL orig, SEL new)
@@ -31,7 +22,6 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
 
 @interface UITableView (NXEmptyViewPrivate)
 @property (nonatomic, assign) UITableViewCellSeparatorStyle nxEV_previousSeparatorStyle;
-@property (nonatomic, assign) CGFloat nxEV_contentInsetTop;
 @end
 
 
@@ -100,15 +90,9 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
     
     // setup empty view frame
     CGRect frame = self.bounds;
-    frame.size.height = CGRectGetHeight(emptyView.frame);
-    if (self.nxEV_contentInsetTop < 1) {
-        self.nxEV_contentInsetTop = self.contentInset.top;
-    }
-    frame.origin = CGPointMake(0, CGRectGetHeight(self.tableHeaderView.frame) + self.nxEV_contentInsetTop);
-    if (self.bounds.size.height-frame.origin.y < CGRectGetHeight(emptyView.frame)) {
-        [self setContentInset:UIEdgeInsetsMake(self.nxEV_contentInsetTop, 0, CGRectGetHeight(emptyView.frame) + self.nxEV_contentInsetTop, 0)];
-    }
-    //frame.size.height -= self.contentInset.top;
+    frame.origin = CGPointMake(0, 0);
+    frame = UIEdgeInsetsInsetRect(frame, UIEdgeInsetsMake(CGRectGetHeight(self.tableHeaderView.frame), 0, 0, 0));
+    frame.size.height = MAX(frame.size.height-self.contentInset.top, self.bounds.size.height);
     emptyView.frame = frame;
     emptyView.autoresizingMask = (UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth);
     
@@ -142,6 +126,9 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
     
     // show / hide empty view
     emptyView.hidden = !emptyViewShouldBeShown;
+    if (!emptyView.hidden) {
+        self.contentSize = CGSizeMake(frame.size.width, self.tableHeaderView.frame.size.height + frame.size.height);
+    }
 }
 
 
@@ -182,19 +169,6 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
 {
     NSNumber *previousSeparatorStyle = [NSNumber numberWithInt:value];
     objc_setAssociatedObject(self, &NXEmptyViewPreviousSeparatorStyleAssociatedKey, previousSeparatorStyle, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
-@dynamic nxEV_contentInsetTop;
-- (CGFloat)nxEV_contentInsetTop
-{
-    NSNumber *previousContentInsetTop = objc_getAssociatedObject(self, &NXEmptyViewPreviousContentInsetTopAssociatedKey);
-    return [previousContentInsetTop floatValue];
-}
-
-- (void)setNxEV_contentInsetTop:(CGFloat)value
-{
-    NSNumber *contentInsetTop = [NSNumber numberWithFloat:value];
-    objc_setAssociatedObject(self, &NXEmptyViewPreviousContentInsetTopAssociatedKey, contentInsetTop, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 @end
