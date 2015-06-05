@@ -88,13 +88,19 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
         [self addSubview:emptyView];
     }
     
-    // setup empty view frame
+    if (self.tableHeaderView.frame.size.height + emptyView.frame.size.height > self.frame.size.height) {
+        emptyView.frame = CGRectMake(0, self.tableHeaderView.frame.size.height, self.frame.size.width, emptyView.frame.size.height);
+    } else {
+        emptyView.frame = CGRectMake(0, self.tableHeaderView.frame.size.height, self.frame.size.width, self.frame.size.height - self.tableHeaderView.frame.size.height);
+    }
+    
+    /*// setup empty view frame
     CGRect frame = self.bounds;
     frame.origin = CGPointMake(0, 0);
     frame = UIEdgeInsetsInsetRect(frame, UIEdgeInsetsMake(CGRectGetHeight(self.tableHeaderView.frame), 0, 0, 0));
     frame.size.height = MAX(frame.size.height-self.contentInset.top, self.bounds.size.height);
     emptyView.frame = frame;
-    emptyView.autoresizingMask = (UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth);
+    emptyView.autoresizingMask = (UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth);*/
     
     // check available data
     BOOL emptyViewShouldBeShown = (self.nxEV_hasRowsToDisplay == NO);
@@ -127,7 +133,7 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
     // show / hide empty view
     emptyView.hidden = !emptyViewShouldBeShown;
     if (!emptyView.hidden) {
-        self.contentSize = CGSizeMake(frame.size.width, self.tableHeaderView.frame.size.height + frame.size.height);
+        self.contentSize = CGSizeMake(self.frame.size.width, self.tableHeaderView.frame.size.height + emptyView.frame.size.height);
     }
 }
 
